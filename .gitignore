@@ -2,6 +2,9 @@
 
 /.idea
 
+/Source/Tests/OutputFiles
+/Source/Tests/pretrained_models
+
 *.suo
 *.user
 .vs/
