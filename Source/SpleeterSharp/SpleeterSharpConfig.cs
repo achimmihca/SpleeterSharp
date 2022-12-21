@@ -23,6 +23,7 @@ namespace SpleeterSharp
             return config;
         }
 
+        public string SpleeterCommand { get; private set; } = "spleeter";
         public bool IsWindows { get; private set; }
         public Action<string> LogAction { get; private set; }
 
@@ -39,6 +40,12 @@ namespace SpleeterSharp
         public SpleeterSharpConfig SetLogAction(Action<string> logAction)
         {
             LogAction = logAction;
+            return this;
+        }
+
+        public SpleeterSharpConfig SetSpleeterCommand(string spleeterCommand)
+        {
+            SpleeterCommand = spleeterCommand;
             return this;
         }
     }

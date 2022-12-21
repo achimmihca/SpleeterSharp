@@ -6,10 +6,7 @@ namespace SpleeterSharp
     {
         public int ExitCode { get; set; }
         public string Output { get; set; }
-
-        public int FileWrittenCount { get; set; }
-
-        public int ErrorCount { get; set; }
+        public List<string> WrittenFiles { get; set; } = new List<string>();
         public List<string> Errors { get; set; } = new List<string>();
     }
 }

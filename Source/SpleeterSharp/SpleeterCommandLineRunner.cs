@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -8,12 +9,12 @@ namespace SpleeterSharp
     internal class SpleeterCommandLineRunner
     {
         private static readonly Regex fileWrittenRegex = new Regex(@"INFO:spleeter:File\s(.*)\swritten");
-        private static readonly Regex errorRegex = new Regex(@"ERROR:spleeter:(.*)");
+        private static readonly Regex errorRegex = new Regex(@"ERROR:spleeter:(.*)|Error: (.*)");
 
         public static SpleeterResult Split(SpleeterParameters spleeterParameters)
         {
             List<string> parameterStringList = GetParameterStringList(spleeterParameters);
-            string cmd = $"python -m spleeter separate " + string.Join(' ', parameterStringList);
+            string cmd = $"{SpleeterSharpConfig.Config.SpleeterCommand} separate {string.Join(' ', parameterStringList)}";
             ShellExecutionResult result = ShellUtils.Execute(cmd);
             return ParseSpleeterProcessOutput(result.ExitCode, result.Output);
         }
@@ -24,7 +25,37 @@ namespace SpleeterSharp
             spleeterResult.ExitCode = exitCode;
             spleeterResult.Output = processOutput;
 
-            // TODO: Parse process output line by line
+            // Parse process output line by line
+            void ParseLine(string line)
+            {
+                Match fileWrittenRegexMatch = fileWrittenRegex.Match(line);
+                if (fileWrittenRegexMatch.Success)
+                {
+                    string filePath = fileWrittenRegexMatch.Groups[1].Value;
+                    string absoluteFilePath = new FileInfo(filePath).FullName;
+                    spleeterResult.WrittenFiles.Add(absoluteFilePath);
+                    return;
+                }
+
+                Match errorRegexMatch = errorRegex.Match(line);
+                if (errorRegexMatch.Success)
+                {
+                    string errorMessageGroup1 = errorRegexMatch.Groups[1].Value;
+                    string errorMessageGroup2 = errorRegexMatch.Groups[2].Value;
+                    string errorMessage = !string.IsNullOrEmpty(errorMessageGroup1)
+                        ? errorMessageGroup1
+                        : errorMessageGroup2;
+                    spleeterResult.Errors.Add(errorMessage);
+                }
+            }
+
+            using StringReader stringReader = new StringReader(processOutput);
+            string line;
+            while ((line = stringReader.ReadLine()) != null)
+            {
+                ParseLine(line);
+            }
+
             return spleeterResult;
         }
 

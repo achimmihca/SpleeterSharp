@@ -6,6 +6,9 @@ namespace SpleeterSharp
 {
     internal static class ShellUtils
     {
+        /**
+         * Executes a command using cmd.exe on Windows or bash on Linux and macOS.
+         */
         public static ShellExecutionResult Execute(
             string cmd,
             Action<string> stdErrDataReceivedCallback = null,
