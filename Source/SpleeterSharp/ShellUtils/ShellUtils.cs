@@ -39,28 +39,36 @@ namespace SpleeterSharp
             };
             process.ErrorDataReceived += delegate(object sender, DataReceivedEventArgs e)
             {
-                if (!string.IsNullOrWhiteSpace(e.Data))
+                if (string.IsNullOrWhiteSpace(e.Data))
                 {
-                    stdErrDataReceivedCallback?.Invoke(e.Data);
+                    return;
                 }
 
                 if (stdErrDataReceivedCallback == null)
                 {
                     SpleeterSharpConfig.Config.LogAction?.Invoke(e.Data);
                 }
+                else
+                {
+                    stdErrDataReceivedCallback.Invoke(e.Data);
+                }
 
                 outputBuilder.AppendLine(e.Data);
             };
             process.OutputDataReceived += delegate(object sender, DataReceivedEventArgs e)
             {
-                if (!string.IsNullOrWhiteSpace(e.Data))
+                if (string.IsNullOrWhiteSpace(e.Data))
                 {
-                    stdOutDataReceivedCallback?.Invoke(e.Data);
+                    return;
                 }
 
                 if (stdOutDataReceivedCallback == null)
                 {
                     SpleeterSharpConfig.Config.LogAction?.Invoke(e.Data);
+                }
+                else
+                {
+                    stdOutDataReceivedCallback.Invoke(e.Data);
                 }
 
                 outputBuilder.AppendLine(e.Data);
