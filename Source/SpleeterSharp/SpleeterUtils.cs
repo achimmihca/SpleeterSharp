@@ -1,10 +1,13 @@
-﻿namespace SpleeterSharp
+﻿using System.Threading;
+using System.Threading.Tasks;
+
+namespace SpleeterSharp
 {
     public static class SpleeterUtils
     {
-        public static SpleeterResult Split(SpleeterParameters spleeterParameters)
+        public static Task<SpleeterResult> SplitAsync(SpleeterParameters spleeterParameters, CancellationToken cancellationToken)
         {
-            return SpleeterCommandLineRunner.Split(spleeterParameters);
+            return SpleeterCommandLineRunner.SplitAsync(spleeterParameters, cancellationToken);
         }
     }
 }

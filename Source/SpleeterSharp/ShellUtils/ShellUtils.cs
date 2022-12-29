@@ -1,20 +1,23 @@
 ﻿using System.Diagnostics;
 using System.Text;
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace SpleeterSharp
 {
     internal static class ShellUtils
     {
         /**
-         * Executes a command using cmd.exe on Windows or bash on Linux and macOS.
+         * Executes a command using the system shell (cmd.exe on Windows, bash on Linux and macOS).
          */
-        public static ShellExecutionResult Execute(
+        public static Task<ShellExecutionResult> ExecuteAsync(
             string cmd,
+            CancellationToken cancellationToken,
             Action<string> stdErrDataReceivedCallback = null,
             Action<string> stdOutDataReceivedCallback = null)
         {
-            SpleeterSharpConfig.Config.LogAction?.Invoke($"Will execute: {cmd}");
+            SpleeterSharpConfig.Config.LogAction?.Invoke($"Executing command: {cmd}");
 
             string escapedArgs = SpleeterSharpConfig.Config.IsWindows
                 ? cmd
@@ -74,18 +77,38 @@ namespace SpleeterSharp
                 outputBuilder.AppendLine(e.Data);
             };
 
-            process.Start();
-            process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
-            process.WaitForExit();
-            process.CancelOutputRead();
-            process.CancelErrorRead();
+            return Task.Run( () =>
+                {
+                    process.Start();
+                    process.BeginOutputReadLine();
+                    process.BeginErrorReadLine();
 
-            return new ShellExecutionResult()
-            {
-                ExitCode = process.ExitCode,
-                Output = outputBuilder.ToString()
-            };
+                    bool isKilled = false;
+                    while (!process.HasExited
+                            && !isKilled)
+                    {
+                        if (cancellationToken.IsCancellationRequested)
+                        {
+                            process.Kill();
+                            isKilled = true;
+                        }
+                        else
+                        {
+                            Thread.Sleep(200);
+                        }
+                    }
+
+                    process.CancelOutputRead();
+                    process.CancelErrorRead();
+                    cancellationToken.ThrowIfCancellationRequested();
+
+                    return new ShellExecutionResult()
+                    {
+                        ExitCode = process.ExitCode,
+                        Output = outputBuilder.ToString()
+                    };
+                },
+                cancellationToken);
         }
     }
 }

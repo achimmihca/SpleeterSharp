@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace SpleeterSharp
 {
@@ -11,12 +13,14 @@ namespace SpleeterSharp
         private static readonly Regex fileWrittenRegex = new Regex(@"INFO:spleeter:File\s(.*)\swritten");
         private static readonly Regex errorRegex = new Regex(@"ERROR:spleeter:(.*)|Error: (.*)");
 
-        public static SpleeterResult Split(SpleeterParameters spleeterParameters)
+        public static async Task<SpleeterResult> SplitAsync(
+            SpleeterParameters spleeterParameters,
+            CancellationToken cancellationToken)
         {
             List<string> parameterStringList = GetParameterStringList(spleeterParameters);
             string cmd = $"{SpleeterSharpConfig.Config.SpleeterCommand} separate {string.Join(' ', parameterStringList)}";
-            ShellExecutionResult result = ShellUtils.Execute(cmd);
-            return ParseSpleeterProcessOutput(result.ExitCode, result.Output);
+            ShellExecutionResult shellExecutionResult = await ShellUtils.ExecuteAsync(cmd, cancellationToken);
+            return ParseSpleeterProcessOutput(shellExecutionResult.ExitCode, shellExecutionResult.Output);
         }
 
         private static SpleeterResult ParseSpleeterProcessOutput(int exitCode, string processOutput)

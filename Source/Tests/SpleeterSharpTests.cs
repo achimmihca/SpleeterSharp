@@ -1,7 +1,10 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace SpleeterSharp
@@ -9,7 +12,7 @@ namespace SpleeterSharp
     public class SpleeterSharpTests
     {
         [Fact]
-        public void TestSpleeterVoiceSeparation()
+        public async void TestSpleeterVoiceSeparation()
         {
             SpleeterSharpConfig.Create()
                 .SetSpleeterCommand("python -m spleeter")
@@ -28,7 +31,7 @@ namespace SpleeterSharp
             spleeterParameters.InputFile = "InputFiles/audio_example.mp3";
             spleeterParameters.OutputFolder = "OutputFiles";
             spleeterParameters.OutputFileCodec = "ogg";
-            SpleeterResult spleeterResult = SpleeterUtils.Split(spleeterParameters);
+            SpleeterResult spleeterResult = await SpleeterUtils.SplitAsync(spleeterParameters, CancellationToken.None);
 
             Assert.NotEmpty(spleeterResult.Output);
             Assert.Equal(0, spleeterResult.ExitCode);
@@ -48,7 +51,7 @@ namespace SpleeterSharp
         }
 
         [Fact]
-        public void TestSpleeterVoiceSeparationError()
+        public async void TestSpleeterVoiceSeparationError()
         {
             SpleeterSharpConfig.Create()
                 .SetSpleeterCommand("python -m spleeter")
@@ -61,12 +64,49 @@ namespace SpleeterSharp
             spleeterParameters.InputFile = "InputFiles/audio_example.mp3";
             spleeterParameters.OutputFolder = "OutputFiles";
             spleeterParameters.OutputFileCodec = "FORCE_ERROR";
-            SpleeterResult spleeterResult = SpleeterUtils.Split(spleeterParameters);
+            SpleeterResult spleeterResult = await SpleeterUtils.SplitAsync(spleeterParameters, CancellationToken.None);
 
             Assert.NotEmpty(spleeterResult.Output);
             Assert.True(spleeterResult.ExitCode != 0);
             Assert.NotEmpty(spleeterResult.Errors);
             Assert.NotEmpty(spleeterResult.Errors[0]);
+        }
+
+        [Fact]
+        public async void TestSpleeterVoiceSeparationCanceled()
+        {
+            SpleeterSharpConfig.Create()
+                .SetSpleeterCommand("python -m spleeter")
+                .SetIsWindows(true)
+                .SetLogAction(text => Debug.WriteLine(text));
+
+            ChangeToTestDirectory();
+
+            SpleeterParameters spleeterParameters = new SpleeterParameters();
+            spleeterParameters.InputFile = "InputFiles/audio_example.mp3";
+            spleeterParameters.OutputFolder = "OutputFiles";
+            spleeterParameters.OutputFileCodec = "ogg";
+
+            SpleeterResult spleeterResult;
+            try
+            {
+                CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+                Task<SpleeterResult> spleeterResultTask =
+                    SpleeterUtils.SplitAsync(spleeterParameters, cancellationTokenSource.Token);
+
+                // Simulate cancellation
+                cancellationTokenSource.CancelAfter(500);
+
+                spleeterResult = await spleeterResultTask;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Received exception as expected: {ex.GetType()}");
+                Debug.WriteLine(ex.Message + "\n" +ex.StackTrace);
+                return;
+            }
+
+            Assert.Fail($"Received Spleeter result although task was cancelled: {spleeterResult}");
         }
 
         private void ChangeToTestDirectory()
