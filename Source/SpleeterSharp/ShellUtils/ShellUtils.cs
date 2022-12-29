@@ -89,7 +89,9 @@ namespace SpleeterSharp
                     {
                         if (cancellationToken.IsCancellationRequested)
                         {
+                            SpleeterSharpConfig.Config.LogAction?.Invoke($"Canceled command of process {process.Id}: {cmd}");
                             process.Kill();
+                            SpleeterSharpConfig.Config.LogAction?.Invoke($"Killed process {process.Id}");
                             isKilled = true;
                         }
                         else
