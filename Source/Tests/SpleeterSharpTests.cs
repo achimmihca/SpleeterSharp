@@ -109,6 +109,35 @@ namespace SpleeterSharp
             Assert.Fail($"Received Spleeter result although task was cancelled: {spleeterResult}");
         }
 
+        [Fact]
+        public void TestAsyncAwaitThreads()
+        {
+            Debug.WriteLine($"TestAsyncAwaitThreads: {Thread.CurrentThread.ManagedThreadId}");
+            SayHi().Wait();
+            SayBye().Wait();
+        }
+
+        private async Task<string> SayHi()
+        {
+            await SayBye();
+            Debug.WriteLine($"SayHi before Task.Run: {Thread.CurrentThread.ManagedThreadId}");
+            return await Task.Run(() =>
+            {
+                Debug.WriteLine($"SayHi in Task.Run: {Thread.CurrentThread.ManagedThreadId}");
+                return "Hi";
+            });
+        }
+
+        private async Task<string> SayBye()
+        {
+            Debug.WriteLine($"SayBye before Task.Run: {Thread.CurrentThread.ManagedThreadId}");
+            return await Task.Run(() =>
+            {
+                Debug.WriteLine($"SayBye in Task.Run: {Thread.CurrentThread.ManagedThreadId}");
+                return "Bye";
+            });
+        }
+
         private void ChangeToTestDirectory()
         {
             Debug.WriteLine("moving to test directory from: " + Directory.GetCurrentDirectory());
