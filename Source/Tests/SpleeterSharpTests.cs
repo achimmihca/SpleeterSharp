@@ -11,11 +11,13 @@ namespace SpleeterSharp
 {
     public class SpleeterSharpTests
     {
+        private const string SpleeterCommand = "..\\..\\SpleeterMsvcExe-v1.0\\Spleeter.exe";
+
         [Fact]
         public async void TestSpleeterVoiceSeparation()
         {
             SpleeterSharpConfig.Create()
-                .SetSpleeterCommand("python -m spleeter")
+                .SetSpleeterCommand(SpleeterCommand)
                 .SetIsWindows(true)
                 .SetLogAction(text => Debug.WriteLine(text));
 
@@ -29,15 +31,17 @@ namespace SpleeterSharp
 
             SpleeterParameters spleeterParameters = new SpleeterParameters();
             spleeterParameters.InputFile = "InputFiles/audio_example.mp3";
-            spleeterParameters.OutputFolder = "OutputFiles";
-            spleeterParameters.OutputFileCodec = "ogg";
+            spleeterParameters.OutputFolder = "OutputFiles/audio_example.ogg";
+            spleeterParameters.Overwrite = true;
             SpleeterResult spleeterResult = await SpleeterUtils.SplitAsync(spleeterParameters, CancellationToken.None);
 
+            Debug.WriteLine($"Spleeter output: {spleeterResult.Output}");
+            
             Assert.NotEmpty(spleeterResult.Output);
             Assert.Equal(0, spleeterResult.ExitCode);
 
-            string expectedVocalFilePath = "OutputFiles/audio_example/vocals.ogg";
-            string expectedInstrumentalFilePath = "OutputFiles/audio_example/accompaniment.ogg";
+            string expectedVocalFilePath = "OutputFiles/audio_example.vocals.ogg";
+            string expectedInstrumentalFilePath = "OutputFiles/audio_example.accompaniment.ogg";
             Assert.True(File.Exists(expectedVocalFilePath));
             Assert.True(File.Exists(expectedInstrumentalFilePath));
 
@@ -54,7 +58,7 @@ namespace SpleeterSharp
         public async void TestSpleeterVoiceSeparationError()
         {
             SpleeterSharpConfig.Create()
-                .SetSpleeterCommand("python -m spleeter")
+                .SetSpleeterCommand(SpleeterCommand)
                 .SetIsWindows(true)
                 .SetLogAction(text => Debug.WriteLine(text));
 
@@ -62,7 +66,8 @@ namespace SpleeterSharp
 
             SpleeterParameters spleeterParameters = new SpleeterParameters();
             spleeterParameters.InputFile = "InputFiles/audio_example.mp3";
-            spleeterParameters.OutputFolder = "OutputFiles";
+            spleeterParameters.OutputFolder = "OutputFiles/audio_example.ogg";
+            spleeterParameters.Overwrite = true;
             spleeterParameters.OutputFileCodec = "FORCE_ERROR";
             SpleeterResult spleeterResult = await SpleeterUtils.SplitAsync(spleeterParameters, CancellationToken.None);
 
@@ -76,7 +81,7 @@ namespace SpleeterSharp
         public async void TestSpleeterVoiceSeparationCanceled()
         {
             SpleeterSharpConfig.Create()
-                .SetSpleeterCommand("python -m spleeter")
+                .SetSpleeterCommand(SpleeterCommand)
                 .SetIsWindows(true)
                 .SetLogAction(text => Debug.WriteLine(text));
 
@@ -84,8 +89,8 @@ namespace SpleeterSharp
 
             SpleeterParameters spleeterParameters = new SpleeterParameters();
             spleeterParameters.InputFile = "InputFiles/audio_example.mp3";
-            spleeterParameters.OutputFolder = "OutputFiles";
-            spleeterParameters.OutputFileCodec = "ogg";
+            spleeterParameters.OutputFolder = "OutputFiles/audio_example.ogg";
+            spleeterParameters.Overwrite = true;
 
             SpleeterResult spleeterResult;
             try

@@ -58,5 +58,10 @@
          * [default: False]
          */
         public bool MultiChannelWienerFiltering { get; set; }
+        
+        /**
+         * Overwrite existing files. Can be used with SpleeterMsvcExe.
+         */
+        public bool Overwrite { get; set; }
     }
 }

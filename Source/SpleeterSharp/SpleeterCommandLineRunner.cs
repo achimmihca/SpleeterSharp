@@ -18,7 +18,7 @@ namespace SpleeterSharp
             CancellationToken cancellationToken)
         {
             List<string> parameterStringList = GetParameterStringList(spleeterParameters);
-            string cmd = $"{SpleeterSharpConfig.Config.SpleeterCommand} separate {string.Join(' ', parameterStringList)}";
+            string cmd = $"{SpleeterSharpConfig.Config.SpleeterCommand} {string.Join(' ', parameterStringList)}";
             ShellExecutionResult shellExecutionResult = await ShellUtils.ExecuteAsync(cmd, cancellationToken);
             return ParseSpleeterProcessOutput(shellExecutionResult.ExitCode, shellExecutionResult.Output);
         }
@@ -29,9 +29,35 @@ namespace SpleeterSharp
             spleeterResult.ExitCode = exitCode;
             spleeterResult.Output = processOutput;
 
+            bool startOfOutputFiles = false;
+            
             // Parse process output line by line
             void ParseLine(string line)
             {
+                // Parse output of SpleeterMsvcExe
+                string trimmedLine = line.Trim();
+                if (startOfOutputFiles)
+                {
+                    if (trimmedLine.EndsWith(".vocals.ogg")
+                        || trimmedLine.EndsWith(".vocals.mp3")
+                        || trimmedLine.EndsWith(".accompaniment.ogg")
+                        || trimmedLine.EndsWith(".accompaniment.mp3"))
+                    {
+                        string filePath = trimmedLine;
+                        string absoluteFilePath = new FileInfo(filePath).FullName;
+                        spleeterResult.WrittenFiles.Add(absoluteFilePath);
+                    }
+                    else if (trimmedLine.StartsWith("["))
+                    {
+                        startOfOutputFiles = false;
+                    }
+                }
+                else if (trimmedLine.StartsWith("Output files:"))
+                {
+                    startOfOutputFiles = true;
+                }
+                
+                // Parse output of Spleeter as Python module
                 Match fileWrittenRegexMatch = fileWrittenRegex.Match(line);
                 if (fileWrittenRegexMatch.Success)
                 {
@@ -60,6 +86,13 @@ namespace SpleeterSharp
                 ParseLine(line);
             }
 
+            // Add the whole process output as error if no specific error was found
+            if (spleeterResult.ExitCode != 0
+                && spleeterResult.Errors.Count == 0)
+            {
+                spleeterResult.Errors.Add(spleeterResult.Output);
+            }
+            
             return spleeterResult;
         }
 
@@ -67,6 +100,7 @@ namespace SpleeterSharp
         {
             return new List<string>
                 {
+                    GetInputFileParameter(spleeterParameters.InputFile),
                     GetOutputFolderParameter(spleeterParameters.OutputFolder),
                     GetOutputFileBitrateParameter(spleeterParameters.OutputFileBitrate),
                     GetOutputFileCodecParameter(spleeterParameters.OutputFileCodec),
@@ -76,7 +110,7 @@ namespace SpleeterSharp
                     GetMaxDurationParameter(spleeterParameters.MaxDuration),
                     GetOffsetParameter(spleeterParameters.Offset),
                     GetMultiChannelWienerFilteringParameter(spleeterParameters.MultiChannelWienerFiltering),
-                    GetInputFileParameter(spleeterParameters.InputFile),
+                    GetOverwriteParameter(spleeterParameters.Overwrite),
                 }
                 .Where(param => !string.IsNullOrEmpty(param))
                 .ToList();
@@ -94,7 +128,7 @@ namespace SpleeterSharp
         private static string GetOutputFolderParameter(string outputFolder)
         {
             return !string.IsNullOrEmpty(outputFolder)
-                ? $"--output_path \"{outputFolder}\""
+                ? $"-o \"{outputFolder}\""
                 : "";
         }
 
@@ -151,6 +185,13 @@ namespace SpleeterSharp
         {
             return useMultiChannelWienerFiltering
                 ? "--mwf"
+                : "";
+        }
+        
+        private static string GetOverwriteParameter(bool overwrite)
+        {
+            return overwrite
+                ? "--overwrite"
                 : "";
         }
     }
