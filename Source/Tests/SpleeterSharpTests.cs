@@ -16,6 +16,23 @@ namespace SpleeterSharp
         [Fact]
         public async void TestSpleeterVoiceSeparation()
         {
+            DoTestSpleeterVoiceSeparation("audio_example.mp3");
+        }
+
+        [Fact]
+        public async void TestSpleeterVoiceSeparationNonAscii()
+        {
+            DoTestSpleeterVoiceSeparation("audio_example_nonascii_á.mp3");
+        }
+
+        [Fact]
+        public async void TestSpleeterVoiceSeparationJp()
+        {
+            DoTestSpleeterVoiceSeparation("audio_example_jp_あ.mp3");
+        }
+
+        private async void DoTestSpleeterVoiceSeparation(string fileName)
+        {
             SpleeterSharpConfig.Create()
                 .SetSpleeterCommand(SpleeterCommand)
                 .SetIsWindows(true)
@@ -29,19 +46,20 @@ namespace SpleeterSharp
                 Directory.Delete("OutputFiles/audio_example", true);
             }
 
+            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(fileName);
             SpleeterParameters spleeterParameters = new SpleeterParameters();
-            spleeterParameters.InputFile = "InputFiles/audio_example.mp3";
-            spleeterParameters.OutputFolder = "OutputFiles/audio_example.ogg";
+            spleeterParameters.InputFile = $"InputFiles/{fileName}";
+            spleeterParameters.OutputFolder = $"OutputFiles/{fileNameWithoutExtension}.ogg";
             spleeterParameters.Overwrite = true;
             SpleeterResult spleeterResult = await SpleeterUtils.SplitAsync(spleeterParameters, CancellationToken.None);
 
             Debug.WriteLine($"Spleeter output: {spleeterResult.Output}");
-            
+
             Assert.NotEmpty(spleeterResult.Output);
             Assert.Equal(0, spleeterResult.ExitCode);
 
-            string expectedVocalFilePath = "OutputFiles/audio_example.vocals.ogg";
-            string expectedInstrumentalFilePath = "OutputFiles/audio_example.accompaniment.ogg";
+            string expectedVocalFilePath = $"OutputFiles/{fileNameWithoutExtension}.vocals.ogg";
+            string expectedInstrumentalFilePath = $"OutputFiles/{fileNameWithoutExtension}.accompaniment.ogg";
             Assert.True(File.Exists(expectedVocalFilePath));
             Assert.True(File.Exists(expectedInstrumentalFilePath));
 
