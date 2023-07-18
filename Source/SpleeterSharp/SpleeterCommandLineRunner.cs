@@ -18,8 +18,8 @@ namespace SpleeterSharp
             CancellationToken cancellationToken)
         {
             List<string> parameterStringList = GetParameterStringList(spleeterParameters);
-            string cmd = $"{SpleeterSharpConfig.Config.SpleeterCommand} {string.Join(' ', parameterStringList)}";
-            ShellExecutionResult shellExecutionResult = await ShellUtils.ExecuteAsync(cmd, cancellationToken);
+            string args = string.Join(' ', parameterStringList);
+            ShellExecutionResult shellExecutionResult = await ShellUtils.ExecuteAsync(SpleeterSharpConfig.Config.SpleeterCommand, args, cancellationToken);
             return ParseSpleeterProcessOutput(shellExecutionResult.ExitCode, shellExecutionResult.Output);
         }
 

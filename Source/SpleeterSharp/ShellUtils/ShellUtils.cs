@@ -1,6 +1,8 @@
 ﻿using System.Diagnostics;
 using System.Text;
 using System;
+using System.Globalization;
+using System.Text.Unicode;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -12,31 +14,27 @@ namespace SpleeterSharp
          * Executes a command using the system shell (cmd.exe on Windows, bash on Linux and macOS).
          */
         public static Task<ShellExecutionResult> ExecuteAsync(
-            string cmd,
+            string program,
+            string args,
             CancellationToken cancellationToken,
             Action<string> stdErrDataReceivedCallback = null,
             Action<string> stdOutDataReceivedCallback = null)
         {
-            SpleeterSharpConfig.Config.LogAction?.Invoke($"Executing command: {cmd}");
+            SpleeterSharpConfig.Config.LogAction?.Invoke($"Executing command: {program} {args}");
 
-            string escapedArgs = SpleeterSharpConfig.Config.IsWindows
-                ? cmd
-                : cmd.Replace("\"", "\\\"");
             StringBuilder outputBuilder = new StringBuilder();
             Process process = new Process()
             {
                 StartInfo = new ProcessStartInfo
                 {
-                    FileName = SpleeterSharpConfig.Config.IsWindows
-                        ? "cmd.exe"
-                        : "/bin/bash",
-                    Arguments = SpleeterSharpConfig.Config.IsWindows
-                        ? $"/C \"{escapedArgs}\""
-                        : $"-c \"{escapedArgs}\"",
+                    FileName = program,
+                    Arguments = args,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     UseShellExecute = false,
                     CreateNoWindow = true,
+                    StandardOutputEncoding = Encoding.Latin1,
+                    StandardErrorEncoding = Encoding.Latin1,
                 },
                 EnableRaisingEvents = true
             };
@@ -89,7 +87,7 @@ namespace SpleeterSharp
                     {
                         if (cancellationToken.IsCancellationRequested)
                         {
-                            SpleeterSharpConfig.Config.LogAction?.Invoke($"Canceled command of process {process.Id}: {cmd}");
+                            SpleeterSharpConfig.Config.LogAction?.Invoke($"Canceled command of process {process.Id}: {program} {args}");
                             process.Kill();
                             SpleeterSharpConfig.Config.LogAction?.Invoke($"Killed process {process.Id}");
                             isKilled = true;
