@@ -28,6 +28,7 @@ namespace SpleeterSharp
         [Fact]
         public async void TestSpleeterVoiceSeparationJp()
         {
+            // TODO: Does not work. Which encoding does the command line program use?
             DoTestSpleeterVoiceSeparation("audio_example_jp_あ.mp3");
         }
 

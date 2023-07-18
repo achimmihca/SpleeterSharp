@@ -20,6 +20,12 @@ namespace SpleeterSharp
         {
             SpleeterSharpConfig.Config.LogAction?.Invoke($"Executing command: {program} {args}");
 
+            Encoding encoding = Encoding.GetEncoding(
+                "Latin1",
+                Encoding.UTF8.EncoderFallback,
+                Encoding.UTF8.DecoderFallback
+            );
+
             StringBuilder outputBuilder = new StringBuilder();
             Process process = new Process()
             {
@@ -31,8 +37,8 @@ namespace SpleeterSharp
                     RedirectStandardError = true,
                     UseShellExecute = false,
                     CreateNoWindow = true,
-                    StandardOutputEncoding = Encoding.Latin1,
-                    StandardErrorEncoding = Encoding.Latin1,
+                    StandardOutputEncoding = encoding,
+                    StandardErrorEncoding = encoding,
                 },
                 EnableRaisingEvents = true
             };
