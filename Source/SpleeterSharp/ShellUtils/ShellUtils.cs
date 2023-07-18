@@ -1,8 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Text;
 using System;
-using System.Globalization;
-using System.Text.Unicode;
 using System.Threading;
 using System.Threading.Tasks;
 
